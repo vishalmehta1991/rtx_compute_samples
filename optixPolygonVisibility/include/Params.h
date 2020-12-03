@@ -38,7 +38,9 @@
  */
 
 struct Params {
+  int N_rays_per_point;
   float3 *ray_centers;
+  float *initial_angle; // in degree
   float *hit_tmax;
   OptixTraversableHandle handle;
 };

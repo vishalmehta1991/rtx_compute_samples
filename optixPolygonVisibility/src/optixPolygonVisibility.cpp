@@ -63,8 +63,10 @@ int main(int argc, char *argv[]) try {
   size_t const num_polygons =
       (argc > 1) ? std::max(1, std::atoi(argv[1])) : 1e4;
   size_t const num_centers = (argc > 1) ? std::max(1, std::atoi(argv[2])) : 1e6;
+  const int N_rays_per_point = 180;
   const int N_rays =
-      360 * num_centers; // Each point does a 360 launch. 1 degree sampling
+      N_rays_per_point * num_centers; // Each point does a 180 launch. with
+                                      // initial angle and 1 degree sampling
 
   std::cout << std::setw(32) << std::left
             << "Number of Polygons: " << std::setw(12) << std::right
@@ -117,7 +119,9 @@ int main(int argc, char *argv[]) try {
 
   // Initialize Particle's Position & Velocity
   float3 *ray_centers;
+  float *initial_angle;
   initialize_raycenters(num_centers, aabb_box, &ray_centers);
+  initialize_angles(num_centers, &initial_angle);
 
   // Allocate data for storing hit points.
   float *out_tmax;
@@ -128,7 +132,9 @@ int main(int argc, char *argv[]) try {
   Params params;
   params.handle = rtx_dataholder->gas_handle;
   params.ray_centers = ray_centers;
+  params.initial_angle = initial_angle;
   params.hit_tmax = out_tmax;
+  params.N_rays_per_point = N_rays_per_point;
 
   // Copy Pipeline Parameters to Device Memory
   Params *d_params = {};

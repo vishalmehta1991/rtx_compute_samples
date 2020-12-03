@@ -38,16 +38,19 @@ extern "C" __global__ void __raygen__launch360(void) {
   // Calculate our unique ray index
   uint3 launch_index = optixGetLaunchIndex();
   unsigned int ray_id = launch_index.x;
-  int const center_idx = (int)(ray_id / 360); 
-  float angle = (float)(ray_id % 360) * (M_PI / 180.0f);
-  float3 ray_origin = params.ray_centers[center_idx]; // Ray center
+  int const center_idx = (int)(ray_id / 360);
+
+  float angle = params.initial_angle[center_idx];
+  angle += (float)(ray_id % params.N_rays_per_point) * (M_PI / 180.0f);
+
+  float3 ray_origin = params.ray_centers[center_idx];        // Ray center
   float3 ray_dir = make_float3(cosf(angle), sinf(angle), 0); // Ray Direction
 
   // Initialize Payload
   // We use -1 as a sentinel to indicate miss events
   unsigned int p0 = __float_as_uint(-1.0f);
 
-  //Trace rays through geometry
+  // Trace rays through geometry
   optixTrace(params.handle, ray_origin,
              ray_dir,                       // Ray direction
              0.0f, 1000.0f,                 // [tmin, tmax]

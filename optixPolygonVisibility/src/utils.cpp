@@ -70,6 +70,17 @@ OptixAabb compute_bounds(std::vector<float3> const &vertices) {
   return bbox;
 }
 
+// Lambda function that creates a new input buffer and uploads the vector
+// data to it. This makes the data available from within the ray generation
+// program.
+template <typename T> void *upload_to_buffer(T &v) {
+  void *d_buf;
+  CUDA_CHECK(cudaMalloc(&d_buf, sizeof(v[0]) * v.size()));
+  CUDA_CHECK(cudaMemcpy(d_buf, v.data(), sizeof(v[0]) * v.size(),
+                        cudaMemcpyHostToDevice));
+  return d_buf;
+}
+
 /**
  * Initializes the ray centers
  *
@@ -110,18 +121,6 @@ void initialize_raycenters(size_t num_centers, OptixAabb const &bbox,
     }
   };
 
-  // Lambda function that creates a new input buffer and uploads the vector
-  // data to it. This makes the data available from within the ray generation
-  // program.
-  auto upload_to_buffer = [](container_t const &v) {
-    void *d_buf;
-    CUDA_CHECK(cudaMalloc(&d_buf, sizeof(container_t::value_type) * v.size()));
-    CUDA_CHECK(cudaMemcpy(d_buf, v.data(),
-                          sizeof(container_t::value_type) * v.size(),
-                          cudaMemcpyHostToDevice));
-    return d_buf;
-  };
-
   // Setup ray centers
   container_t ray_centers;
 
@@ -135,6 +134,22 @@ void initialize_raycenters(size_t num_centers, OptixAabb const &bbox,
 
   // The data is uploaded, so we don't need it on the host side anymore
   ray_centers.clear();
+}
+
+// Initialize arbitrary angle between 0-360 degree for each ray center
+void initialize_angles(size_t num_centers, float **initial_angles) {
+  using dist_t = std::uniform_real_distribution<float>;
+  using rng_t = std::mt19937;
+  std::vector<float> angles;
+  angles.reserve(num_centers);
+  // Initialize the random number generator
+  unsigned int const seed = 62984;
+  rng_t rng(seed);
+  dist_t angle_dist = dist_t(0, 359);
+  for (int i = 0; i < num_centers; i++) {
+    angles.push_back(angle_dist(rng));
+  }
+  *initial_angles = (float *)upload_to_buffer(angles);
 }
 
 template <typename T, typename K>
