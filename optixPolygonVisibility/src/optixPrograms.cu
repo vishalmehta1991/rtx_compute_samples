@@ -38,8 +38,8 @@ extern "C" __global__ void __raygen__launch360(void) {
   // Calculate our unique ray index
   uint3 launch_index = optixGetLaunchIndex();
   unsigned int ray_id = launch_index.x;
-  int N_rays_per_point = params.N_rays_per_point int const center_idx =
-      (int)(ray_id / N_rays_per_point);
+  int N_rays_per_point = params.N_rays_per_point;
+  int const center_idx = (int)(ray_id / N_rays_per_point);
 
   float angle = params.initial_angle[center_idx]; // load initial angle
   angle += ray_id % N_rays_per_point;             // add 1 degree offset
